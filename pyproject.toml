@@ -8,6 +8,11 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = "^0.115.7"
+python-json-logger = "^3.2.1"
+psycopg = "^3.2.4"
+sqlalchemy = "^2.0.37"
+uvicorn = "^0.34.0"
+asyncio = "^3.4.3"
 
 
 [tool.poetry.group.dev.dependencies]
