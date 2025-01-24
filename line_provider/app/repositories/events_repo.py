@@ -19,4 +19,4 @@ class EventRepo:
         return event_data.event_id
 
     async def check_uuid_uniqness(self, generated_uuid: UUID4) -> bool:
-        return events.get(generated_uuid, None) is not None
+        return events.get(generated_uuid, None) is None

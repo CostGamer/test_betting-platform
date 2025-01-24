@@ -8,15 +8,13 @@ from .enums import EventStatus
 
 class EventBase(BaseModel):
     name: str
-    coefficient: Decimal | None = Field(
-        default=None,
+    coefficient: Decimal = Field(
+        ...,
         gt=1,
         decimal_places=2,
         description="Positive odds with two decimal places",
     )
-    deadline: int | None = Field(
-        default=None, description="Unix timestamp for betting deadline"
-    )
+    deadline: int = Field(..., description="Unix timestamp for betting deadline")
 
 
 class EventCreate(EventBase):
