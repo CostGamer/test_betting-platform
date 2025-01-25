@@ -21,7 +21,7 @@ events_router = APIRouter(prefix="/events", tags=["/events"])
 
 
 @events_router.get(
-    "event/{event_id}",
+    "/event/{event_id}",
     response_model=Event,
     responses=get_event_responses,
     description="Retrieve detailed information about an event by its unique identifier",
@@ -35,7 +35,7 @@ async def get_event(
 @events_router.get(
     "/active",
     response_model=list[Event | None],
-    description="",
+    description="Retrieve a list of all active events currently available",
 )
 async def get_active_events(
     event_service: GetAllActiveEventsProtocol = Depends(get_all_active_events),
@@ -46,7 +46,7 @@ async def get_active_events(
 @events_router.get(
     "/",
     response_model=list[Event | None],
-    description="",
+    description="Retrieve a list of all possible events, both active and inactive",
 )
 async def get_all_possible_events(
     event_service: GetAllEventsProtocol = Depends(get_all_events),
@@ -57,7 +57,7 @@ async def get_all_possible_events(
 @events_router.post(
     "/create_event",
     response_model=UUID4,
-    description="",
+    description="Create a new event and return its unique identifier",
 )
 async def create_new_event(
     event: EventCreate, event_service: PostEventProtocol = Depends(get_post_event)

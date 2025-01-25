@@ -26,7 +26,10 @@ from line_provider.app.core.schemas.services_protocols import (
     CheckStatusServiceProtocol,
     CreateEventServiceProtocol,
 )
+from line_provider.app.services.producer_service import ProducerService
+from line_provider.app.storage import events
 from shared.configs import all_settings
+from shared.configs.rabbitmq import RabbitBase
 from shared.middleware.logging import LoggerMiddleware
 from shared.utils.logger import init_logger
 
@@ -35,26 +38,30 @@ logger = getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    bg_task_repo: BackgroundTaskRepoProtocol = get_bg_task_repo()
-    event_repo: EventRepoProtocol = get_event_repo()
+    async with RabbitBase(all_settings.rabbit) as rbmq_service:
+        bg_task_repo: BackgroundTaskRepoProtocol = get_bg_task_repo()
+        event_repo: EventRepoProtocol = get_event_repo()
 
-    bg_service: CheckStatusServiceProtocol = get_check_status_service(
-        bg_task_repo, event_repo
-    )
-    create_event_service: CreateEventServiceProtocol = get_create_event_service(
-        bg_task_repo
-    )
-
-    async def run_tasks() -> None:
-        await asyncio.gather(
-            bg_service.check_all_events(),
-            create_event_service.create_events_periodically(),
+        bg_service: CheckStatusServiceProtocol = get_check_status_service(
+            bg_task_repo, event_repo
+        )
+        create_event_service: CreateEventServiceProtocol = get_create_event_service(
+            bg_task_repo
         )
 
-    tasks: asyncio.Task = asyncio.create_task(run_tasks())
+        producer_service = ProducerService(rbmq_service)
 
-    yield
-    tasks.cancel()
+        async def run_tasks() -> None:
+            await asyncio.gather(
+                bg_service.check_all_events(),
+                create_event_service.create_events_periodically(),
+                producer_service.send_periodic_messages(events),
+            )
+
+        tasks: asyncio.Task = asyncio.create_task(run_tasks())
+
+        yield
+        tasks.cancel()
 
 
 def register_exception_handlers(app: FastAPI) -> None:

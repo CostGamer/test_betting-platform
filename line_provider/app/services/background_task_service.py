@@ -30,14 +30,14 @@ class CheckStatusService:
                 )
                 await self._bg_task_repo.change_event_status(event.event_id, status)
 
-    async def check_all_events(self) -> None:
+    async def check_all_events(self, interval: int = 1) -> None:
         while True:
             current_time = datetime.now(timezone.utc)
             events = await self._event_repo.get_all_events()
             for event in events:
                 if event:
                     await self._check_event_status(event, current_time)
-            await asyncio.sleep(1)
+            await asyncio.sleep(interval)
 
 
 class CreateEventService:
@@ -61,10 +61,10 @@ class CreateEventService:
 
         await self._bg_task_repo.create_event(event)
 
-    async def create_events_periodically(self) -> None:
+    async def create_events_periodically(self, interval: int = 30) -> None:
         while True:
             try:
                 await self._create_random_event()
             except Exception as e:
                 print(f"Error creating event: {e}")
-            await asyncio.sleep(30)
+            await asyncio.sleep(interval)
