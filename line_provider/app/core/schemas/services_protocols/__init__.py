@@ -1,4 +1,8 @@
-from .event_service_protocol import (
+from .background_task_service_protocols import (
+    CheckStatusServiceProtocol,
+    CreateEventServiceProtocol,
+)
+from .event_service_protocols import (
     GetAllActiveEventsProtocol,
     GetAllEventsProtocol,
     GetEventServiceProtocol,
@@ -10,4 +14,6 @@ __all__ = [
     "GetAllActiveEventsProtocol",
     "GetAllEventsProtocol",
     "PostEventProtocol",
+    "CheckStatusServiceProtocol",
+    "CreateEventServiceProtocol",
 ]

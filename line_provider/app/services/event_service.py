@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from pydantic import UUID4
@@ -55,7 +56,8 @@ class PostEvent:
         event = Event(
             name=post_event_data.name,
             coefficient=post_event_data.coefficient,
-            deadline=post_event_data.deadline,
+            deadline=int(datetime.now(timezone.utc).timestamp())
+            + post_event_data.deadline,
             status=EventStatus.NEW,
             event_id=generated_uuid,
         )

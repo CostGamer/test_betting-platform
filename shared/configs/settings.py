@@ -28,6 +28,19 @@ class LoggingSettings(BaseModel):
     )
 
 
+class RabbitSettings(BaseModel):
+    rabbit_host: str = Field(default="localhost", alias="RABBITMQ_HOST")
+    rabbit_port: int = Field(default=5672, alias="RABBITMQ_PORT")
+    rabbit_password: str = Field(default="guest", alias="RABBITMQ_PASSWORD")
+    rabbit_user: str = Field(default="guest", alias="RABBITMQ_USER")
+    rabbit_rk: str = Field(default="line_queue", alias="RABBITMQ_RK")
+    rabbit_exchange: str = Field(default="betting_lines", alias="RABBITMQ_EXCHANGE")
+
+    @property
+    def mq_uri(self) -> str:
+        return f"amqp://{self.rabbit_user}:{self.rabbit_password}@{self.rabbit_host}:{self.rabbit_port}/"
+
+
 class OtherSettings(BaseModel):
     line_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:8000", "http://127.0.0.1:8000"],
@@ -50,6 +63,7 @@ class Settings(BaseModel):
     database: PostgresSettings = Field(default_factory=lambda: PostgresSettings(**env))
     logging: LoggingSettings = Field(default_factory=lambda: LoggingSettings(**env))
     different: OtherSettings = Field(default_factory=lambda: OtherSettings(**env))
+    rabbit: RabbitSettings = Field(default_factory=lambda: RabbitSettings(**env))
 
 
 def load_dotenv(path: str | Path) -> None:
