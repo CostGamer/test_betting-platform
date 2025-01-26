@@ -30,7 +30,7 @@ from line_provider.app.services.producer_service import ProducerService
 from line_provider.app.storage import events
 from shared.configs import all_settings
 from shared.configs.rabbitmq import RabbitBase
-from shared.middleware.logging import LoggerMiddleware
+from shared.middleware.logging_middleware import LoggerMiddleware
 from shared.utils.logger import init_logger
 
 logger = getLogger(__name__)
