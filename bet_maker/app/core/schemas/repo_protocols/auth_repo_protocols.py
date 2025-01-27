@@ -10,6 +10,6 @@ class AuthRepoProtocol(Protocol):
         """Registering a new user"""
         pass
 
-    async def _hash_password(self, password: str) -> bytes:
+    def _hash_password(self, password: str) -> bytes:
         """Hashing user password"""
         pass

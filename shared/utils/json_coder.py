@@ -7,6 +7,10 @@ from line_provider.app.core.models import Event
 
 async def change_transfer_data(event_data: dict[UUID4, Event]) -> list[dict[str, Any]]:
     return [
-        {"name": event.name, "coefficient": float(event.coefficient)}
+        {
+            "name": event.name,
+            "coefficient": float(event.coefficient),
+            "status": event.status,
+        }
         for event in event_data.values()
     ]

@@ -82,7 +82,7 @@ class Settings(BaseModel):
     logging: LoggingSettings = Field(default_factory=lambda: LoggingSettings(**env))
     different: OtherSettings = Field(default_factory=lambda: OtherSettings(**env))
     rabbit: RabbitSettings = Field(default_factory=lambda: RabbitSettings(**env))
-    reddis: RedisSettings = Field(default_factory=lambda: RedisSettings(**env))
+    redis: RedisSettings = Field(default_factory=lambda: RedisSettings(**env))
     jwt: JWTSettings = Field(default_factory=lambda: JWTSettings(**env))
 
 
