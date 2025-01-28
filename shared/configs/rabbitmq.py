@@ -1,56 +1,49 @@
 from types import TracebackType
+from typing import Optional
 
 from aio_pika import connect_robust
-from aio_pika.abc import AbstractChannel, AbstractRobustConnection
+from aio_pika.abc import AbstractRobustConnection
 from aio_pika.exceptions import AMQPConnectionError
 
 from .settings import RabbitSettings
 
 
-class RabbitBase:
-    def __init__(self, rbmq_settings: RabbitSettings) -> None:
-        self.rbmq_settings: RabbitSettings = rbmq_settings
-        self._connection: AbstractRobustConnection | None = None
-        self._channel: AbstractChannel | None = None
+class RabbitBaseConnection:
+    def __init__(self, rbmq_settings: "RabbitSettings") -> None:
+        self.rbmq_settings = rbmq_settings
+        self._connection: Optional[AbstractRobustConnection] = None
 
     async def connect(self) -> None:
-        """Establish a connection to RabbitMQ and open a channel"""
-        try:
-            self._connection = await connect_robust(self.rbmq_settings.mq_uri)
-            self._channel = await self._connection.channel()
-        except AMQPConnectionError as e:
-            raise ConnectionError("Failed to connect to RabbitMQ") from e
+        """Establish a connection to RabbitMQ."""
+        if not self._connection or self._connection.is_closed:
+            try:
+                self._connection = await connect_robust(self.rbmq_settings.mq_uri)
+            except AMQPConnectionError as e:
+                raise ConnectionError("Failed to connect to RabbitMQ") from e
 
     @property
-    def channel(self) -> AbstractChannel:
-        """Get the open channel, raise an error if not initialized"""
-        if self._channel is None or self._channel.is_closed:
-            raise RuntimeError("RabbitMQ channel is not initialized or already closed")
-        return self._channel
-
-    @property
-    def get_routing_key(self) -> str:
-        return self.rbmq_settings.rabbit_rk
-
-    @property
-    def get_exchange_name(self) -> str:
-        return self.rbmq_settings.rabbit_exchange
+    def connection(self) -> AbstractRobustConnection:
+        """Get the connection, raise an error if not initialized."""
+        if not self._connection or self._connection.is_closed:
+            raise RuntimeError(
+                "RabbitMQ connection is not initialized or already closed."
+            )
+        return self._connection
 
     async def close(self) -> None:
-        """Close the channel and connection"""
-        if self._channel and not self._channel.is_closed:
-            await self._channel.close()
+        """Close the connection."""
         if self._connection and not self._connection.is_closed:
             await self._connection.close()
+            self._connection = None
 
-    async def __aenter__(self) -> "RabbitBase":
+    async def __aenter__(self) -> "RabbitBaseConnection":
         await self.connect()
         return self
 
     async def __aexit__(
         self,
-        exc_type: type | None,
-        exc_val: Exception | None,
-        exc_tb: TracebackType | None,
+        exc_type: Optional[type] = None,
+        exc_val: Optional[Exception] = None,
+        exc_tb: Optional[TracebackType] = None,
     ) -> None:
         await self.close()

@@ -29,8 +29,8 @@ from line_provider.app.core.schemas.services_protocols import (
 from line_provider.app.services.producer_service import ProducerService
 from line_provider.app.storage import events
 from shared.configs import all_settings
-from shared.configs.rabbitmq import RabbitBase
-from shared.middleware.logging import LoggerMiddleware
+from shared.configs.rabbitmq import RabbitBaseConnection  # RabbitBaseSingleton
+from shared.middleware.logging_middleware import LoggerMiddleware
 from shared.utils.logger import init_logger
 
 logger = getLogger(__name__)
@@ -38,7 +38,7 @@ logger = getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    async with RabbitBase(all_settings.rabbit) as rbmq_service:
+    async with RabbitBaseConnection(all_settings.rabbit) as rbmq_service:
         bg_task_repo: BackgroundTaskRepoProtocol = get_bg_task_repo()
         event_repo: EventRepoProtocol = get_event_repo()
 

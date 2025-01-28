@@ -4,6 +4,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
+TOKEN_TYPE_FIELD = "type"
+ACCESS_TOKEN = "access"
+REFRESH_TOKEN = "refresh"
+
 
 class PostgresSettings(BaseModel):
     host: str = Field(default="localhost", alias="POSTGRES_HOST")
@@ -41,6 +45,20 @@ class RabbitSettings(BaseModel):
         return f"amqp://{self.rabbit_user}:{self.rabbit_password}@{self.rabbit_host}:{self.rabbit_port}/"
 
 
+class RedisSettings(BaseModel):
+    redis_host: str = Field(default="localhost", alias="REDIS_HOST")
+    redis_port: int = Field(default=6379, alias="REDIS_PORT")
+    redis_db: int = Field(default=0, alias="REDIS_DB")
+    redis_max_conn: int = Field(default=1000, alias="REDIS_MAX_CONN")
+
+
+class JWTSettings(BaseModel):
+    jwt_secret: str = Field(default="secret", alias="SECRET_KEY")
+    jwt_algorithm: str = Field(default="HS256")
+    jwt_access_token_expire_minutes: int = Field(default=20)
+    jwt_refresh_token_expire_days: int = Field(default=90)
+
+
 class OtherSettings(BaseModel):
     line_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:8000", "http://127.0.0.1:8000"],
@@ -64,6 +82,8 @@ class Settings(BaseModel):
     logging: LoggingSettings = Field(default_factory=lambda: LoggingSettings(**env))
     different: OtherSettings = Field(default_factory=lambda: OtherSettings(**env))
     rabbit: RabbitSettings = Field(default_factory=lambda: RabbitSettings(**env))
+    redis: RedisSettings = Field(default_factory=lambda: RedisSettings(**env))
+    jwt: JWTSettings = Field(default_factory=lambda: JWTSettings(**env))
 
 
 def load_dotenv(path: str | Path) -> None:
