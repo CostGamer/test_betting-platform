@@ -12,6 +12,7 @@ from .common_service_protocols import CommonServiceProtocol
 from .cookie_protocols import EstablishCookiesProtocol
 from .events_protocols import GetEventsServiceProtocol
 from .jwt_service_protocols import JWTServiceProtocol
+from .user_service_protocols import BalanceServiceProtocol, GetUserInfoServiceProtocol
 
 __all__ = [
     "JWTServiceProtocol",
@@ -24,4 +25,6 @@ __all__ = [
     "CommonServiceProtocol",
     "GetBetsServiceProtocol",
     "GetActiveBetsServiceProtocol",
+    "GetUserInfoServiceProtocol",
+    "BalanceServiceProtocol",
 ]

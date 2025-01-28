@@ -24,6 +24,7 @@ from bet_maker.app.api.exception_responses.exceptions import (
 from bet_maker.app.api.v1.controllers.auth_controller import auth_router
 from bet_maker.app.api.v1.controllers.bets_controller import bets_router
 from bet_maker.app.api.v1.controllers.events_controller import events_router
+from bet_maker.app.api.v1.controllers.user_controller import user_router
 from bet_maker.app.core.custom_exceptions import (
     EventNotFoundError,
     ExpectRefreshTokenError,
@@ -77,6 +78,7 @@ def init_routers(app: FastAPI) -> None:
     http_bearer = HTTPBearer(auto_error=True)
     app.include_router(auth_router, prefix="/v1")
     app.include_router(events_router, prefix="/v1")
+    app.include_router(user_router, prefix="/v1", dependencies=[Depends(http_bearer)])
     app.include_router(bets_router, prefix="/v1", dependencies=[Depends(http_bearer)])
 
 

@@ -10,11 +10,13 @@ from bet_maker.app.core.schemas.repo_protocols import (
     UserRepoProtocol,
 )
 from bet_maker.app.core.schemas.service_protocols import (
+    BalanceServiceProtocol,
     CommonServiceProtocol,
     EstablishCookiesProtocol,
     GetActiveBetsServiceProtocol,
     GetBetsServiceProtocol,
     GetEventsServiceProtocol,
+    GetUserInfoServiceProtocol,
     JWTServiceProtocol,
     LoginAuthServiceProtocol,
     PostBetServiceProtocol,
@@ -40,6 +42,7 @@ from bet_maker.app.services.common_service import CommonService
 from bet_maker.app.services.cookie_service import EstablishCookies
 from bet_maker.app.services.events_service import GetEventsService
 from bet_maker.app.services.jwt_service import JWTService
+from bet_maker.app.services.user_service import BalanceService, GetUserInfoService
 from shared.configs.database import get_session
 from shared.configs.redis import get_redis_connection
 
@@ -135,3 +138,17 @@ def get_active_bets_service(
     common_service: CommonServiceProtocol = Depends(get_common_service),
 ) -> GetActiveBetsServiceProtocol:
     return GetActiveBetsService(bet_repo, common_service)
+
+
+def get_user_info_service(
+    user_repo: UserRepoProtocol = Depends(get_user_repo),
+    common_service: CommonServiceProtocol = Depends(get_common_service),
+) -> GetUserInfoServiceProtocol:
+    return GetUserInfoService(user_repo, common_service)
+
+
+def get_balance_service(
+    user_repo: UserRepoProtocol = Depends(get_user_repo),
+    common_service: CommonServiceProtocol = Depends(get_common_service),
+) -> BalanceServiceProtocol:
+    return BalanceService(user_repo, common_service)
