@@ -1,12 +1,12 @@
 from pydantic import UUID4
 from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bet_maker.app.core.models.sqlalchemy_models import Users
 
 
 class UserRepo:
-    def __init__(self, con: AsyncConnection):
+    def __init__(self, con: AsyncSession):
         self._con = con
 
     async def get_user_balance(self, user_id: UUID4) -> float:

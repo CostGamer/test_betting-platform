@@ -12,7 +12,7 @@ class PostBetServiceProtocol(Protocol):
         pass
 
     def _find_event_by_name(
-        self, name: str, events_list: list[Event]
+        self, name: str, events_list: list[Event | None]
     ) -> Optional[Event]:
         """Find an event by its name in the list of events."""
         pass

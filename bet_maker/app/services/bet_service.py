@@ -62,7 +62,7 @@ class PostBetService:
         return bet
 
     def _find_event_by_name(
-        self, name: str, events_list: list[Event]
+        self, name: str, events_list: list[Event | None]
     ) -> Optional[Event]:
         return next(
             (event for event in events_list if event and event.name == name), None

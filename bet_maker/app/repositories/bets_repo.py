@@ -1,13 +1,13 @@
 from pydantic import UUID4
 from sqlalchemy import and_, insert, select
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bet_maker.app.core.models.pydantic_models import GetBet, PostBetDTO
 from bet_maker.app.core.models.sqlalchemy_models import Bets, Users
 
 
 class BetRepo:
-    def __init__(self, con: AsyncConnection):
+    def __init__(self, con: AsyncSession):
         self._con = con
 
     async def make_bet(self, bet_data: PostBetDTO) -> GetBet:
