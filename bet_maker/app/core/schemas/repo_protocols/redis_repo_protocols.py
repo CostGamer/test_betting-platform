@@ -6,6 +6,6 @@ class RedisRepoProtocol(Protocol):
         """Send a message to Redis with the specified key"""
         pass
 
-    async def get_message(self, redis_key: str = ...) -> list:
+    async def get_message(self, redis_key: str = ...) -> list[dict]:
         """Retrieve a message from Redis by the specified key"""
         pass

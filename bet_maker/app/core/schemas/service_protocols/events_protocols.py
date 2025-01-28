@@ -11,3 +11,7 @@ class GetEventsServiceProtocol(Protocol):
     def _filter_events(self, events: list[dict]) -> list[Event | None]:
         """Filter events to include only active ones based on their status"""
         pass
+
+    async def get_all_events(self) -> list[Event | None]:
+        """Retrieve a list of events"""
+        pass

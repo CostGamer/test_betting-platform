@@ -17,7 +17,6 @@ class ProducerService:
         self._rbmq_config = rbmq_config
 
     async def ensure_connection_initialized(self) -> None:
-        """Ensure that the connection is initialized and open"""
         if not self._rbmq_config._connection or self._rbmq_config._connection.is_closed:
             logger.info("Connection is not initialized or closed, reconnecting...")
             try:
@@ -28,7 +27,6 @@ class ProducerService:
                 raise RuntimeError("Failed to reconnect to RabbitMQ") from e
 
     async def _get_channel(self) -> AbstractChannel:
-        """Get or create a RabbitMQ channel"""
         if not self._rbmq_config._connection or self._rbmq_config._connection.is_closed:
             await self.ensure_connection_initialized()
 
@@ -40,7 +38,6 @@ class ProducerService:
             raise RuntimeError("Failed to create RabbitMQ channel") from e
 
     async def declare_exchange_and_queue(self) -> AbstractExchange:
-        """Declare exchange and queue after ensuring connection is initialized"""
         channel = await self._get_channel()
 
         exchange = await channel.declare_exchange(
@@ -55,7 +52,6 @@ class ProducerService:
     async def produce_message(
         self, message_body: list, exchange: AbstractExchange
     ) -> None:
-        """Produce a message and publish to the exchange"""
         message = Message(
             body=json.dumps(message_body).encode(),
         )
@@ -69,9 +65,8 @@ class ProducerService:
             raise RuntimeError("Failed to publish message to RabbitMQ") from e
 
     async def send_periodic_messages(
-        self, message_body: dict, interval: int = 1
+        self, message_body: dict, interval: int = 5
     ) -> None:
-        """Send periodic messages with a specified interval"""
         exchange = await self.declare_exchange_and_queue()
         while True:
             try:

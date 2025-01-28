@@ -21,7 +21,8 @@ class Bets(Base):
     bet_at: Mapped[datetime] = mapped_column(default=func.now())
     money_amount: Mapped[float] = mapped_column(nullable=False)
     result: Mapped[int] = mapped_column(nullable=False)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    event_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
 
     user: Mapped["Users"] = relationship("Users", back_populates="bets")
 

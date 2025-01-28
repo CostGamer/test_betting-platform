@@ -142,6 +142,72 @@ get_all_active_bets_exceptions = {
     },
 }
 
+get_user_info_exceptions = {
+    400: {
+        "expect_access_token_error": {
+            "summary": "ExpectAccessTokenError",
+            "value": {"detail": "Invalid JWT type"},
+        },
+    },
+    401: {
+        "invalid_token_error": {
+            "summary": "InvalidTokenError",
+            "value": {"detail": "Invalid JWT"},
+        },
+        "missing_or_bad_jwt_error": {
+            "summary": "MissingOrBadJWTError",
+            "value": {"detail": "Invalid JWT"},
+        },
+    },
+}
+
+
+get_balance_top_up_exceptions = {
+    400: {
+        "expect_access_token_error": {
+            "summary": "ExpectAccessTokenError",
+            "value": {"detail": "Invalid JWT type"},
+        },
+        "not_enough_money_error": {
+            "summary": "NotEnoughMoneyError",
+            "value": {"detail": "Top up the balance or change the amount of the bet"},
+        },
+    },
+    401: {
+        "invalid_token_error": {
+            "summary": "InvalidTokenError",
+            "value": {"detail": "Invalid JWT"},
+        },
+        "missing_or_bad_jwt_error": {
+            "summary": "MissingOrBadJWTError",
+            "value": {"detail": "Invalid JWT"},
+        },
+    },
+}
+
+
+get_balance_withdraw_exceptions = {
+    400: {
+        "expect_access_token_error": {
+            "summary": "ExpectAccessTokenError",
+            "value": {"detail": "Invalid JWT type"},
+        },
+        "not_enough_money_error": {
+            "summary": "NotEnoughMoneyError",
+            "value": {"detail": "Top up the balance or change the amount of the bet"},
+        },
+    },
+    401: {
+        "invalid_token_error": {
+            "summary": "InvalidTokenError",
+            "value": {"detail": "Invalid JWT"},
+        },
+        "missing_or_bad_jwt_error": {
+            "summary": "MissingOrBadJWTError",
+            "value": {"detail": "Invalid JWT"},
+        },
+    },
+}
 
 get_user_register_responses = create_error_responses(get_user_register_exceptions)
 get_user_login_responses = create_error_responses(get_user_login_exceptions)
@@ -149,3 +215,6 @@ get_token_reissue_responses = create_error_responses(get_token_reissue_exception
 post_bet_responses = create_error_responses(post_bet_exceptions)
 get_all_bets_responses = create_error_responses(get_all_bets_exceptions)
 get_all_active_bets_responses = create_error_responses(get_all_active_bets_exceptions)
+get_user_info_responses = create_error_responses(get_user_info_exceptions)
+get_balance_top_up_responses = create_error_responses(get_balance_top_up_exceptions)
+get_balance_withdraw_responses = create_error_responses(get_balance_withdraw_exceptions)
