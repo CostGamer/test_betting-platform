@@ -18,7 +18,7 @@ class CheckJWTAccessMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp, jwt_service: JWTServiceProtocol):
         super().__init__(app)
         self._jwt_service = jwt_service
-        self.excluded_paths = ["/docs", "/openapi.json", "/jwt"]
+        self.excluded_paths = ["/docs", "/openapi.json", "/v1/auth", "/v1/events"]
 
     async def dispatch(self, request: Request, call_next: Any) -> Any:
         if any(
@@ -45,17 +45,17 @@ class CheckJWTAccessMiddleware(BaseHTTPMiddleware):
         except InvalidTokenError:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": ""},
+                content={"detail": "Invalid JWT"},
             )
         except MissingOrBadJWTError:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": ""},
+                content={"detail": "Invalid JWT"},
             )
         except ExpectAccessTokenError:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                content={"detail": ""},
+                content={"detail": "Invalid JWT type"},
             )
 
         response = await call_next(request)

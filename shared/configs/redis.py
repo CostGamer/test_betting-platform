@@ -1,8 +1,8 @@
 from logging import getLogger
-from types import TracebackType
 
 from redis.asyncio import ConnectionPool, Redis
 
+from shared.configs import all_settings
 from shared.configs.settings import RedisSettings
 
 logger = getLogger(__name__)
@@ -14,7 +14,8 @@ class RedisBase:
         self._pool: ConnectionPool | None = None
         self._redis_connection: Redis | None = None
 
-    async def get_redis_connection(self) -> Redis:
+    async def _initialize_pool(self) -> None:
+        """Initialize the Redis connection pool"""
         if not self._pool:
             self._pool = ConnectionPool(
                 host=self._redis_settings.redis_host,
@@ -22,21 +23,31 @@ class RedisBase:
                 db=self._redis_settings.redis_db,
                 max_connections=self._redis_settings.redis_max_conn,
             )
-        logger.info("Redis connection pool created.")
-        return Redis(connection_pool=self._pool)
+            self._redis_connection = Redis(connection_pool=self._pool)
+            logger.info("Redis connection pool created")
 
-    async def close(self) -> None:
-        if self._redis_connection:
-            await self._redis_connection.close()
+    async def get_redis_connection(self) -> Redis:
+        """Return a Redis connection from the pool"""
+        await self._initialize_pool()
 
-    async def __aenter__(self) -> Redis:
-        self._redis_connection = await self.get_redis_connection()
+        if self._redis_connection is None:
+            raise RuntimeError("Redis connection is not initialized")
+
         return self._redis_connection
 
-    async def __aexit__(
-        self,
-        exc_type: type | None,
-        exc_val: Exception | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        await self.close()
+    async def close(self) -> None:
+        """Close the Redis connection pool if it exists"""
+        if self._pool:
+            await self._pool.disconnect()
+            logger.info("Redis connection pool closed")
+            self._pool = None
+
+
+async def get_redis_connection() -> Redis:
+    redis_base = RedisBase(all_settings.redis)
+    try:
+        redis_conn = await redis_base.get_redis_connection()
+        return redis_conn
+    except Exception as e:
+        logger.error(f"Unexpected error while getting Redis connection: {e}")
+        raise

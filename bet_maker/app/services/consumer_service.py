@@ -3,14 +3,14 @@ from logging import getLogger
 
 from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, AbstractQueue
 
-from bet_maker.app.services.redis_service import RedisService
+from bet_maker.app.repositories.redis_repo import RedisRepo
 from shared.configs.rabbitmq import RabbitBaseConnection
 
 logger = getLogger(__name__)
 
 
 class ConsumerService:
-    def __init__(self, rbmq_config: RabbitBaseConnection, redis: RedisService) -> None:
+    def __init__(self, rbmq_config: RabbitBaseConnection, redis: RedisRepo) -> None:
         self._rbmq_config = rbmq_config
         self._redis_service = redis
 

@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
+from fastapi import Request
 from pydantic import UUID4
 
 from bet_maker.app.core.custom_exceptions import InvalidUsernameOrPasswordError
@@ -106,3 +107,9 @@ class JWTService:
         if current_token_type == jwt_type:
             return True
         return False
+
+    async def get_token_from_response(self, request: Request) -> str:
+        authorization = request.headers.get("Authorization")
+        assert authorization is not None
+        token = authorization.split(" ", 1)[1]
+        return token

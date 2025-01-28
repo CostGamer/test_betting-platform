@@ -4,8 +4,11 @@ from fastapi.responses import JSONResponse
 from jwt.exceptions import InvalidTokenError
 
 from bet_maker.app.core.custom_exceptions import (
+    EventNotFoundError,
     ExpectRefreshTokenError,
     InvalidUsernameOrPasswordError,
+    NoMoneyError,
+    NotEnoughMoneyError,
     UserWithThisEmailExistsError,
 )
 
@@ -50,4 +53,29 @@ async def invalid_jwt_error(request: Request, exc: InvalidTokenError) -> JSONRes
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={"detail": "Invalid jwt"},
+    )
+
+
+async def event_not_found_error(
+    request: Request, exc: EventNotFoundError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"detail": "Event with this name not found"},
+    )
+
+
+async def no_money_error(request: Request, exc: NoMoneyError) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={"detail": "Top up the balance"},
+    )
+
+
+async def not_enough_money_error(
+    request: Request, exc: NotEnoughMoneyError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": "Top up the balance or change the amount of the bet"},
     )

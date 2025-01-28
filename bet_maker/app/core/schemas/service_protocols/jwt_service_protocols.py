@@ -1,5 +1,6 @@
 from typing import Protocol
 
+from fastapi import Request
 from pydantic import UUID4
 
 from bet_maker.app.core.models.pydantic_models import JWTUser
@@ -58,4 +59,8 @@ class JWTServiceProtocol(Protocol):
 
     async def validation_token_type(self, jwt_type: str, payload: dict) -> bool:
         """Check token type is correct"""
+        pass
+
+    async def get_token_from_response(self, request: Request) -> str:
+        """Decode JWT from request"""
         pass

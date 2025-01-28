@@ -16,3 +16,15 @@ class MissingOrBadJWTError(Exception):
 
 class ExpectAccessTokenError(Exception):
     pass
+
+
+class EventNotFoundError(Exception):
+    pass
+
+
+class NoMoneyError(Exception):
+    pass
+
+
+class NotEnoughMoneyError(Exception):
+    pass
