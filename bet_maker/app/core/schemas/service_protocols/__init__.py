@@ -3,7 +3,12 @@ from .auth_service_protocols import (
     RegisterAuthServiceProtocol,
     ReissueTokenServiceProtocol,
 )
-from .bet_service_protocols import PostBetServiceProtocol
+from .bet_service_protocols import (
+    GetActiveBetsServiceProtocol,
+    GetBetsServiceProtocol,
+    PostBetServiceProtocol,
+)
+from .common_service_protocols import CommonServiceProtocol
 from .cookie_protocols import EstablishCookiesProtocol
 from .events_protocols import GetEventsServiceProtocol
 from .jwt_service_protocols import JWTServiceProtocol
@@ -16,4 +21,7 @@ __all__ = [
     "ReissueTokenServiceProtocol",
     "GetEventsServiceProtocol",
     "PostBetServiceProtocol",
+    "CommonServiceProtocol",
+    "GetBetsServiceProtocol",
+    "GetActiveBetsServiceProtocol",
 ]

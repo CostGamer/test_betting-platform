@@ -10,7 +10,10 @@ from bet_maker.app.core.schemas.repo_protocols import (
     UserRepoProtocol,
 )
 from bet_maker.app.core.schemas.service_protocols import (
+    CommonServiceProtocol,
     EstablishCookiesProtocol,
+    GetActiveBetsServiceProtocol,
+    GetBetsServiceProtocol,
     GetEventsServiceProtocol,
     JWTServiceProtocol,
     LoginAuthServiceProtocol,
@@ -28,7 +31,12 @@ from bet_maker.app.services.auth_service import (
     RegisterAuthService,
     ReissueTokenService,
 )
-from bet_maker.app.services.bet_service import PostBetService
+from bet_maker.app.services.bet_service import (
+    GetActiveBetsService,
+    GetBetsService,
+    PostBetService,
+)
+from bet_maker.app.services.common_service import CommonService
 from bet_maker.app.services.cookie_service import EstablishCookies
 from bet_maker.app.services.events_service import GetEventsService
 from bet_maker.app.services.jwt_service import JWTService
@@ -100,10 +108,30 @@ def get_user_repo(
     return UserRepo(session)
 
 
+def get_common_service(
+    jwt_service: JWTServiceProtocol = Depends(get_jwt_service),
+) -> CommonServiceProtocol:
+    return CommonService(jwt_service)
+
+
 def get_post_bet_service(
     bet_repo: BetRepoProtocol = Depends(get_bet_repo),
     event_service: GetEventsServiceProtocol = Depends(get_events_service),
     user_repo: UserRepoProtocol = Depends(get_user_repo),
-    jwt_service: JWTServiceProtocol = Depends(get_jwt_service),
+    common_service: CommonServiceProtocol = Depends(get_common_service),
 ) -> PostBetServiceProtocol:
-    return PostBetService(bet_repo, event_service, user_repo, jwt_service)
+    return PostBetService(bet_repo, event_service, user_repo, common_service)
+
+
+def get_bets_service(
+    bet_repo: BetRepoProtocol = Depends(get_bet_repo),
+    common_service: CommonServiceProtocol = Depends(get_common_service),
+) -> GetBetsServiceProtocol:
+    return GetBetsService(bet_repo, common_service)
+
+
+def get_active_bets_service(
+    bet_repo: BetRepoProtocol = Depends(get_bet_repo),
+    common_service: CommonServiceProtocol = Depends(get_common_service),
+) -> GetActiveBetsServiceProtocol:
+    return GetActiveBetsService(bet_repo, common_service)

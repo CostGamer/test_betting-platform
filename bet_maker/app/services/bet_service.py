@@ -1,8 +1,6 @@
 from typing import Optional
-from uuid import UUID
 
 from fastapi import Request
-from pydantic import UUID4
 
 from bet_maker.app.core.custom_exceptions import (
     EventNotFoundError,
@@ -15,8 +13,8 @@ from bet_maker.app.core.schemas.repo_protocols import (
     UserRepoProtocol,
 )
 from bet_maker.app.core.schemas.service_protocols import (
+    CommonServiceProtocol,
     GetEventsServiceProtocol,
-    JWTServiceProtocol,
 )
 
 
@@ -26,12 +24,12 @@ class PostBetService:
         bet_repo: BetRepoProtocol,
         event_service: GetEventsServiceProtocol,
         user_repo: UserRepoProtocol,
-        jwt_service: JWTServiceProtocol,
+        common_service: CommonServiceProtocol,
     ) -> None:
         self._bet_repo = bet_repo
         self._event_service = event_service
         self._user_repo = user_repo
-        self._jwt_service = jwt_service
+        self._common_service = common_service
 
     async def __call__(self, bet_data: PostBet, request: Request) -> GetBet:
         active_events = await self._event_service.get_active_events()
@@ -40,7 +38,7 @@ class PostBetService:
         if not event_data:
             raise EventNotFoundError
 
-        user_id = await self._get_user_id(request)
+        user_id = await self._common_service._get_user_id(request)
 
         balance = await self._user_repo.get_user_balance(user_id)
         if balance <= 0:
@@ -68,7 +66,30 @@ class PostBetService:
             (event for event in events_list if event and event.name == name), None
         )
 
-    async def _get_user_id(self, request: Request) -> UUID4:
-        token = await self._jwt_service.get_token_from_response(request)
-        jwt_payload = await self._jwt_service.decode_jwt(token)
-        return UUID(jwt_payload.get("sub"), version=4)
+
+class GetBetsService:
+    def __init__(
+        self,
+        bet_repo: BetRepoProtocol,
+        common_service: CommonServiceProtocol,
+    ) -> None:
+        self._bet_repo = bet_repo
+        self._common_service = common_service
+
+    async def __call__(self, request: Request) -> list[GetBet]:
+        user_id = await self._common_service._get_user_id(request)
+        return await self._bet_repo.fetch_all_user_bets(user_id)
+
+
+class GetActiveBetsService:
+    def __init__(
+        self,
+        bet_repo: BetRepoProtocol,
+        common_service: CommonServiceProtocol,
+    ) -> None:
+        self._bet_repo = bet_repo
+        self._common_service = common_service
+
+    async def __call__(self, request: Request) -> list[GetBet]:
+        user_id = await self._common_service._get_user_id(request)
+        return await self._bet_repo.fetch_all_user_bets(user_id)

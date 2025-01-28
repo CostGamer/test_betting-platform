@@ -104,8 +104,48 @@ post_bet_exceptions = {
     },
 }
 
+get_all_bets_exceptions = {
+    400: {
+        "expect_access_token_error": {
+            "summary": "ExpectAccessTokenError",
+            "value": {"detail": "Invalid JWT type"},
+        },
+    },
+    401: {
+        "invalid_token_error": {
+            "summary": "InvalidTokenError",
+            "value": {"detail": "Invalid JWT"},
+        },
+        "missing_or_bad_jwt_error": {
+            "summary": "MissingOrBadJWTError",
+            "value": {"detail": "Invalid JWT"},
+        },
+    },
+}
+
+get_all_active_bets_exceptions = {
+    400: {
+        "expect_access_token_error": {
+            "summary": "ExpectAccessTokenError",
+            "value": {"detail": "Invalid JWT type"},
+        },
+    },
+    401: {
+        "invalid_token_error": {
+            "summary": "InvalidTokenError",
+            "value": {"detail": "Invalid JWT"},
+        },
+        "missing_or_bad_jwt_error": {
+            "summary": "MissingOrBadJWTError",
+            "value": {"detail": "Invalid JWT"},
+        },
+    },
+}
+
 
 get_user_register_responses = create_error_responses(get_user_register_exceptions)
 get_user_login_responses = create_error_responses(get_user_login_exceptions)
 get_token_reissue_responses = create_error_responses(get_token_reissue_exceptions)
 post_bet_responses = create_error_responses(post_bet_exceptions)
+get_all_bets_responses = create_error_responses(get_all_bets_exceptions)
+get_all_active_bets_responses = create_error_responses(get_all_active_bets_exceptions)
