@@ -10,6 +10,7 @@ from bet_maker.app.core.schemas.repo_protocols import (
     UserRepoProtocol,
 )
 from bet_maker.app.core.schemas.service_protocols import (
+    BackgroundTasksServiceProtocol,
     BalanceServiceProtocol,
     CommonServiceProtocol,
     EstablishCookiesProtocol,
@@ -33,6 +34,7 @@ from bet_maker.app.services.auth_service import (
     RegisterAuthService,
     ReissueTokenService,
 )
+from bet_maker.app.services.background_task_service import BackgroundTasksService
 from bet_maker.app.services.bet_service import (
     GetActiveBetsService,
     GetBetsService,
@@ -152,3 +154,11 @@ def get_balance_service(
     common_service: CommonServiceProtocol = Depends(get_common_service),
 ) -> BalanceServiceProtocol:
     return BalanceService(user_repo, common_service)
+
+
+def get_bg_tasks_service(
+    bet_repo: BetRepoProtocol = Depends(get_bet_repo),
+    event_service: GetEventsServiceProtocol = Depends(get_events_service),
+    user_repo: UserRepoProtocol = Depends(get_user_repo),
+) -> BackgroundTasksServiceProtocol:
+    return BackgroundTasksService(bet_repo, event_service, user_repo)

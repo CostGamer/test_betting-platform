@@ -3,6 +3,7 @@ from .auth_service_protocols import (
     RegisterAuthServiceProtocol,
     ReissueTokenServiceProtocol,
 )
+from .background_task_service_protocols import BackgroundTasksServiceProtocol
 from .bet_service_protocols import (
     GetActiveBetsServiceProtocol,
     GetBetsServiceProtocol,
@@ -26,5 +27,6 @@ __all__ = [
     "GetBetsServiceProtocol",
     "GetActiveBetsServiceProtocol",
     "GetUserInfoServiceProtocol",
+    "BackgroundTasksServiceProtocol",
     "BalanceServiceProtocol",
 ]

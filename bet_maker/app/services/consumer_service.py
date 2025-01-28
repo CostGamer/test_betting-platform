@@ -3,19 +3,22 @@ from logging import getLogger
 
 from aio_pika.abc import AbstractChannel, AbstractIncomingMessage, AbstractQueue
 
-from bet_maker.app.repositories.redis_repo import RedisRepo
+from bet_maker.app.core.schemas.repo_protocols.redis_repo_protocols import (
+    RedisRepoProtocol,
+)
 from shared.configs.rabbitmq import RabbitBaseConnection
 
 logger = getLogger(__name__)
 
 
 class ConsumerService:
-    def __init__(self, rbmq_config: RabbitBaseConnection, redis: RedisRepo) -> None:
+    def __init__(
+        self, rbmq_config: RabbitBaseConnection, redis: RedisRepoProtocol
+    ) -> None:
         self._rbmq_config = rbmq_config
         self._redis_service = redis
 
     async def _reconnect_rabbitmq(self) -> None:
-        """Re-establish connection to RabbitMQ if necessary"""
         if not self._rbmq_config._connection or self._rbmq_config._connection.is_closed:
             logger.info("Connection is not initialized or closed, reconnecting...")
             try:
@@ -26,7 +29,6 @@ class ConsumerService:
                 raise RuntimeError("Failed to reconnect to RabbitMQ") from e
 
     async def _create_channel(self) -> AbstractChannel:
-        """Create and return a new RabbitMQ channel"""
         if not self._rbmq_config._connection or self._rbmq_config._connection.is_closed:
             logger.error("RabbitMQ connection is closed or not initialized")
             await self._reconnect_rabbitmq()
@@ -41,7 +43,6 @@ class ConsumerService:
     async def _declare_queue(
         self, channel: AbstractChannel, queue_name: str
     ) -> AbstractQueue:
-        """Declare a RabbitMQ queue"""
         try:
             return await channel.declare_queue(queue_name, durable=True)
         except Exception as e:
@@ -49,7 +50,6 @@ class ConsumerService:
             raise RuntimeError(f"Failed to declare queue {queue_name}") from e
 
     async def consume_message(self, queue_name: str) -> None:
-        """Consume messages from RabbitMQ and process them"""
         await self._reconnect_rabbitmq()
 
         try:
@@ -65,7 +65,6 @@ class ConsumerService:
                 await self._process_message(message)
 
     async def _process_message(self, message: AbstractIncomingMessage) -> None:
-        """Process an individual message"""
         logger.info(f"Received message: {message.body.decode()}")
         try:
             await self._redis_service.send_message(message.body.decode())
@@ -75,12 +74,11 @@ class ConsumerService:
             logger.error(f"Error processing message: {e}")
             await message.nack(requeue=True)
 
-    async def consume_forever(self, queue_name: str) -> None:
-        """Continuously consume messages from RabbitMQ"""
+    async def consume_forever(self, queue_name: str, interval: int = 5) -> None:
         logger.info(f"Starting consumer for queue: {queue_name}")
         while True:
             try:
                 await self.consume_message(queue_name)
             except Exception as e:
                 logger.error(f"Error in consumer loop: {e}")
-                await asyncio.sleep(5)
+            await asyncio.sleep(interval)

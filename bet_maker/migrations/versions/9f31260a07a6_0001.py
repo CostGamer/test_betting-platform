@@ -1,8 +1,8 @@
 """0001
 
-Revision ID: b283e7efcff1
+Revision ID: 9f31260a07a6
 Revises:
-Create Date: 2025-01-26 19:25:51.552467
+Create Date: 2025-01-28 20:20:01.502210
 
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "b283e7efcff1"
+revision: str = "9f31260a07a6"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -38,6 +38,7 @@ def upgrade() -> None:
         sa.Column("money_amount", sa.Float(), nullable=False),
         sa.Column("result", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.UUID(), nullable=False),
+        sa.Column("event_id", sa.Uuid(), nullable=False),
         sa.Column(
             "id", sa.UUID(), server_default=sa.text("gen_random_uuid()"), nullable=False
         ),

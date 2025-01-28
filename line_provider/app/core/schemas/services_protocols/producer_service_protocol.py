@@ -1,21 +1,29 @@
 from typing import Protocol
 
-from aio_pika.abc import AbstractExchange
+from aio_pika.abc import AbstractChannel, AbstractExchange
 
 
 class ProducerServiceProtocol(Protocol):
+    async def ensure_connection_initialized(self) -> None:
+        """Ensure that the connection is initialized and open"""
+        pass
+
+    async def _get_channel(self) -> AbstractChannel:
+        """Get or create a RabbitMQ channel"""
+        pass
+
     async def declare_exchange_and_queue(self) -> AbstractExchange:
-        """Method that declares an exchange and a queue"""
+        """Declare exchange and queue after ensuring connection is initialized"""
         pass
 
     async def produce_message(
         self, message_body: list, exchange: AbstractExchange
     ) -> None:
-        """Compose and publish the message"""
+        """Produce a message and publish to the exchange"""
         pass
 
     async def send_periodic_messages(
-        self, message_body: dict, interval: int = 10
+        self, message_body: dict, interval: int = 1
     ) -> None:
-        """Periodicly send messages to MQ"""
+        """Send periodic messages with a specified interval"""
         pass
