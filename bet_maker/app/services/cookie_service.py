@@ -2,7 +2,8 @@ from fastapi import Response
 
 
 class EstablishCookies:
-    def __init__(self, response: Response) -> None:
+    def __init__(self, response: Response | None = None) -> None:
+        assert response is not None
         self._response = response
 
     async def send_access_token(

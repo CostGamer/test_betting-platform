@@ -8,6 +8,7 @@ from .event_service_protocols import (
     GetEventServiceProtocol,
     PostEventProtocol,
 )
+from .producer_service_protocol import ProducerServiceProtocol
 
 __all__ = [
     "GetEventServiceProtocol",
@@ -16,4 +17,5 @@ __all__ = [
     "PostEventProtocol",
     "CheckStatusServiceProtocol",
     "CreateEventServiceProtocol",
+    "ProducerServiceProtocol",
 ]

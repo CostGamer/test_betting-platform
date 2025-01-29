@@ -7,16 +7,21 @@ from bet_maker.app.core.schemas.repo_protocols.redis_repo_protocols import (
     RedisRepoProtocol,
 )
 from shared.configs.rabbitmq import RabbitBaseConnection
+from shared.configs.settings import Settings
 
 logger = getLogger(__name__)
 
 
 class ConsumerService:
     def __init__(
-        self, rbmq_config: RabbitBaseConnection, redis: RedisRepoProtocol
+        self,
+        rbmq_config: RabbitBaseConnection,
+        redis: RedisRepoProtocol,
+        settings: Settings,
     ) -> None:
         self._rbmq_config = rbmq_config
         self._redis_service = redis
+        self.queue_name = settings.rabbit.rabbit_rk
 
     async def _reconnect_rabbitmq(self) -> None:
         if not self._rbmq_config._connection or self._rbmq_config._connection.is_closed:
@@ -74,11 +79,11 @@ class ConsumerService:
             logger.error(f"Error processing message: {e}")
             await message.nack(requeue=True)
 
-    async def consume_forever(self, queue_name: str, interval: int = 5) -> None:
-        logger.info(f"Starting consumer for queue: {queue_name}")
+    async def consume_forever(self, interval: int = 5) -> None:
+        logger.info(f"Starting consumer for queue: {self.queue_name}")
         while True:
             try:
-                await self.consume_message(queue_name)
+                await self.consume_message(self.queue_name)
             except Exception as e:
                 logger.error(f"Error in consumer loop: {e}")
             await asyncio.sleep(interval)

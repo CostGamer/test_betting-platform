@@ -2,8 +2,7 @@ from logging import getLogger
 
 from redis.asyncio import ConnectionPool, Redis
 
-from shared.configs import all_settings
-from shared.configs.settings import RedisSettings
+from shared.configs.settings import RedisSettings, Settings
 
 logger = getLogger(__name__)
 
@@ -43,8 +42,8 @@ class RedisBase:
             self._pool = None
 
 
-async def get_redis_connection() -> Redis:
-    redis_base = RedisBase(all_settings.redis)
+async def get_redis_connection(settings: Settings) -> Redis:
+    redis_base = RedisBase(settings.redis)
     try:
         redis_conn = await redis_base.get_redis_connection()
         return redis_conn

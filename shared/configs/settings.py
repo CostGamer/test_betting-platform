@@ -9,6 +9,24 @@ ACCESS_TOKEN = "access"
 REFRESH_TOKEN = "refresh"
 
 
+def load_dotenv(path: str | Path) -> None:
+    path = Path(path)
+    if not path.exists():
+        return
+    with path.open(mode="r", encoding="utf-8") as file:
+        for line in file:
+            if line.startswith("#") or line.strip() == "":
+                continue
+            try:
+                key, value = line.strip().split("=", maxsplit=1)
+                env.setdefault(key, value)
+            except ValueError:
+                print(f"Invalid line in .env file: {line.strip()}")
+
+
+load_dotenv(".env")
+
+
 class PostgresSettings(BaseModel):
     host: str = Field(default="localhost", alias="POSTGRES_HOST")
     port: int = Field(default=5432, alias="POSTGRES_PORT")
@@ -84,21 +102,3 @@ class Settings(BaseModel):
     rabbit: RabbitSettings = Field(default_factory=lambda: RabbitSettings(**env))
     redis: RedisSettings = Field(default_factory=lambda: RedisSettings(**env))
     jwt: JWTSettings = Field(default_factory=lambda: JWTSettings(**env))
-
-
-def load_dotenv(path: str | Path) -> None:
-    path = Path(path)
-    if not path.exists():
-        return
-    with path.open(mode="r", encoding="utf-8") as file:
-        for line in file:
-            if line.startswith("#") or line.strip() == "":
-                continue
-            try:
-                key, value = line.strip().split("=", maxsplit=1)
-                env.setdefault(key, value)
-            except ValueError:
-                print(f"Invalid line in .env file: {line.strip()}")
-
-
-load_dotenv(".env")

@@ -1,9 +1,6 @@
-from fastapi import APIRouter, Depends, Query, Request
+from dishka.integrations.fastapi import FromDishka, inject
+from fastapi import APIRouter, Query, Request
 
-from bet_maker.app.api.dependencies import (
-    get_balance_service,
-    get_user_info_service,
-)
 from bet_maker.app.api.exception_responses.responses import (
     get_balance_top_up_responses,
     get_balance_withdraw_responses,
@@ -24,9 +21,10 @@ user_router = APIRouter(prefix="/user", tags=["user"])
     responses=get_user_info_responses,
     description="Get user info",
 )
+@inject
 async def get_user_info(
     request: Request,
-    user_service: GetUserInfoServiceProtocol = Depends(get_user_info_service),
+    user_service: FromDishka[GetUserInfoServiceProtocol],
 ) -> UserModel:
     return await user_service(request)
 
@@ -37,10 +35,11 @@ async def get_user_info(
     responses=get_balance_top_up_responses,
     description="Top up the user balance",
 )
+@inject
 async def top_up_user_balance(
     request: Request,
+    user_service: FromDishka[BalanceServiceProtocol],
     amount: float = Query(gt=0),
-    user_service: BalanceServiceProtocol = Depends(get_balance_service),
 ) -> float:
     return await user_service.top_up(amount, request)
 
@@ -51,9 +50,10 @@ async def top_up_user_balance(
     responses=get_balance_withdraw_responses,
     description="Withdraw the user balance",
 )
+@inject
 async def withdraw_user_balance(
     request: Request,
+    user_service: FromDishka[BalanceServiceProtocol],
     amount: float = Query(gt=0),
-    user_service: BalanceServiceProtocol = Depends(get_balance_service),
 ) -> float:
     return await user_service.withdraw(amount, request)

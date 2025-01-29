@@ -3,33 +3,24 @@ from contextlib import asynccontextmanager
 from logging import getLogger
 from typing import AsyncGenerator
 
+from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from line_provider.app.api.dependencies import (
-    get_bg_task_repo,
-    get_check_status_service,
-    get_create_event_service,
-    get_event_repo,
-)
 from line_provider.app.api.exception_responses.exceptions import (
     event_not_found_error,
     invalid_id_error,
 )
 from line_provider.app.api.v1.controllers.events_controller import events_router
 from line_provider.app.core.custom_exceptions import EventNotFoundError, InvalidIDError
-from line_provider.app.core.schemas.repos_protocols import (
-    BackgroundTaskRepoProtocol,
-    EventRepoProtocol,
-)
 from line_provider.app.core.schemas.services_protocols import (
     CheckStatusServiceProtocol,
     CreateEventServiceProtocol,
+    ProducerServiceProtocol,
 )
-from line_provider.app.services.producer_service import ProducerService
+from line_provider.app.dependencies.container import container
 from line_provider.app.storage import events
-from shared.configs import all_settings
-from shared.configs.rabbitmq import RabbitBaseConnection  # RabbitBaseSingleton
+from shared.configs import all_configs
 from shared.middleware.logging_middleware import LoggerMiddleware
 from shared.utils.logger import init_logger
 
@@ -38,18 +29,16 @@ logger = getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    async with RabbitBaseConnection(all_settings.rabbit) as rbmq_service:
-        bg_task_repo: BackgroundTaskRepoProtocol = get_bg_task_repo()
-        event_repo: EventRepoProtocol = get_event_repo()
-
-        bg_service: CheckStatusServiceProtocol = get_check_status_service(
-            bg_task_repo, event_repo
+    async with container() as request_container:
+        bg_service: CheckStatusServiceProtocol = await request_container.get(
+            CheckStatusServiceProtocol
         )
-        create_event_service: CreateEventServiceProtocol = get_create_event_service(
-            bg_task_repo
+        create_event_service: CreateEventServiceProtocol = await request_container.get(
+            CreateEventServiceProtocol
         )
-
-        producer_service = ProducerService(rbmq_service)
+        producer_service: ProducerServiceProtocol = await request_container.get(
+            ProducerServiceProtocol
+        )
 
         async def run_tasks() -> None:
             await asyncio.gather(
@@ -74,7 +63,7 @@ def init_routers(app: FastAPI) -> None:
 
 
 def init_middlewares(app: FastAPI) -> None:
-    origins = all_settings.different.line_origins
+    origins = all_configs.different.line_origins
 
     app.add_middleware(
         CORSMiddleware,
@@ -93,9 +82,10 @@ def setup_app() -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
-    init_logger(all_settings.logging)
+    init_logger(all_configs.logging)
     init_routers(app)
     init_middlewares(app)
     register_exception_handlers(app)
+    setup_dishka(app=app, container=container)
     logger.info("App created", extra={"app_version": app.version})
     return app

@@ -10,7 +10,7 @@ from bet_maker.app.core.models.pydantic_models import JWTUser
 from bet_maker.app.core.schemas.repo_protocols.common_repo_protocols import (
     CommonRepoProtocol,
 )
-from shared.configs import all_settings
+from shared.configs import all_configs
 from shared.configs.settings import ACCESS_TOKEN, REFRESH_TOKEN, TOKEN_TYPE_FIELD
 
 
@@ -46,9 +46,9 @@ class JWTService:
     async def encode_jwt(
         self,
         payload: dict,
-        secret: str = all_settings.jwt.jwt_secret,
-        algorithm: str = all_settings.jwt.jwt_algorithm,
-        expire_minutes: int = all_settings.jwt.jwt_access_token_expire_minutes,
+        secret: str = all_configs.jwt.jwt_secret,
+        algorithm: str = all_configs.jwt.jwt_algorithm,
+        expire_minutes: int = all_configs.jwt.jwt_access_token_expire_minutes,
         expire_timedelta: int | None = None,
     ) -> str:
         to_encode = payload.copy()
@@ -65,8 +65,8 @@ class JWTService:
     async def decode_jwt(
         self,
         token: str | bytes,
-        secret: str = all_settings.jwt.jwt_secret,
-        algorithm: str = all_settings.jwt.jwt_algorithm,
+        secret: str = all_configs.jwt.jwt_secret,
+        algorithm: str = all_configs.jwt.jwt_algorithm,
     ) -> dict:
         decoded = jwt.decode(jwt=token, key=secret, algorithms=[algorithm])
         return decoded
@@ -75,7 +75,7 @@ class JWTService:
         self,
         token_type: str,
         token_data: dict,
-        expire_minutes: int = all_settings.jwt.jwt_access_token_expire_minutes,
+        expire_minutes: int = all_configs.jwt.jwt_access_token_expire_minutes,
         expire_timedelta: int | None = None,
     ) -> str:
         jwt_payload = {TOKEN_TYPE_FIELD: token_type}
@@ -91,7 +91,7 @@ class JWTService:
         return await self.create_jwt(
             token_type=ACCESS_TOKEN,
             token_data=jwt_payload,
-            expire_minutes=all_settings.jwt.jwt_access_token_expire_minutes,
+            expire_minutes=all_configs.jwt.jwt_access_token_expire_minutes,
         )
 
     async def create_refresh_token(self, user_id: UUID4) -> str:
@@ -99,7 +99,7 @@ class JWTService:
         return await self.create_jwt(
             token_type=REFRESH_TOKEN,
             token_data=jwt_payload,
-            expire_timedelta=all_settings.jwt.jwt_refresh_token_expire_days,
+            expire_timedelta=all_configs.jwt.jwt_refresh_token_expire_days,
         )
 
     async def validation_token_type(self, jwt_type: str, payload: dict) -> bool:

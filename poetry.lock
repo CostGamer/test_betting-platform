@@ -228,6 +228,20 @@ files = [
 ]
 
 [[package]]
+name = "dishka"
+version = "1.4.2"
+description = "Cute DI framework with scopes and agreeable API"
+optional = false
+python-versions = ">=3.10"
+files = [
+    {file = "dishka-1.4.2-py3-none-any.whl", hash = "sha256:5a59c6bf5ac9f34b3e698093207ddb871c13a0721eeb3948eb29011aee61f69c"},
+    {file = "dishka-1.4.2.tar.gz", hash = "sha256:fe1e7b2d0df4306b39650cf4c05485aa79ce1fc31507d1f73300dec3c64b2397"},
+]
+
+[package.dependencies]
+exceptiongroup = {version = ">=1.1.3", markers = "python_version < \"3.11\""}
+
+[[package]]
 name = "distlib"
 version = "0.3.9"
 description = "Distribution utilities"
@@ -1501,4 +1515,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "21edc982b5ecd10fb060e1a47ac0eb4c84c6e44cc319a05c8394874898d71c13"
+content-hash = "397ec86f537bddfa01797151628c944ee2685bb08d40caddc9d1721c3d1a15a9"

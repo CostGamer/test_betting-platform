@@ -8,7 +8,7 @@ class BackgroundTasksServiceProtocol(Protocol):
         """Check the status of all active bets and update their results accordingly"""
         pass
 
-    async def _process_bet(self, bet: ActiveBets) -> None:
+    async def _process_bet(self, bet: ActiveBets, result: int) -> None:
         """Process the status of a single active bet and update user balances if necessary"""
         pass
 

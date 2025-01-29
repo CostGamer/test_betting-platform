@@ -3,17 +3,13 @@ from contextlib import asynccontextmanager
 from logging import getLogger
 from typing import AsyncGenerator
 
+from dishka.integrations.fastapi import setup_dishka
 from email_validator.exceptions_types import EmailNotValidError
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 from jwt.exceptions import InvalidTokenError
-from redis.asyncio import Redis
 
-from bet_maker.app.api.dependencies import (
-    get_bg_tasks_service,
-    get_jwt_service,
-)
 from bet_maker.app.api.exception_responses.exceptions import (
     email_not_valid_error,
     event_not_found_error,
@@ -36,110 +32,40 @@ from bet_maker.app.core.custom_exceptions import (
     NotEnoughMoneyError,
     UserWithThisEmailExistsError,
 )
-from bet_maker.app.core.schemas.repo_protocols import BetRepoProtocol, UserRepoProtocol
 from bet_maker.app.core.schemas.service_protocols import (
     BackgroundTasksServiceProtocol,
-    GetEventsServiceProtocol,
 )
-from bet_maker.app.repositories.bets_repo import BetRepo
-from bet_maker.app.repositories.redis_repo import RedisRepo
-from bet_maker.app.repositories.user_repo import UserRepo
+from bet_maker.app.dependencies.container import container
 from bet_maker.app.services.consumer_service import ConsumerService
-from bet_maker.app.services.events_service import GetEventsService
-from shared.configs import all_settings
-from shared.configs.database import get_session
-from shared.configs.rabbitmq import RabbitBaseConnection
-from shared.configs.redis import get_redis_connection
+from shared.configs import all_configs
 from shared.middleware.check_jwt_middleware import CheckJWTAccessMiddleware
 from shared.middleware.logging_middleware import LoggerMiddleware
 from shared.utils.logger import init_logger
 
 logger = getLogger(__name__)
 
-# async def run_bg_bet_monitor(redis_service):
-#     async for session in get_session():
-#         bet_repo: BetRepoProtocol = BetRepo(session)
-#         event_service: GetEventsServiceProtocol = GetEventsService(redis_service)
-#         user_repo: UserRepoProtocol = UserRepo(session)
-#         bg_bet_monitor: BackgroundTasksServiceProtocol = get_bg_tasks_service(
-#             bet_repo, event_service, user_repo
-#         )
-#         await bg_bet_monitor.monitor_periodically()
-
-# @asynccontextmanager
-# async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-#     async with RabbitBaseConnection(all_settings.rabbit) as rbmq_service:
-#         redis_connection: Redis = await get_redis_connection()
-#         redis_service = RedisRepo(redis_connection)
-#         consumer_service = ConsumerService(rbmq_service, redis_service)
-
-#         # async for session in get_session():
-#         # bet_repo: BetRepoProtocol = BetRepo(session)
-#         # event_service: GetEventsServiceProtocol = GetEventsService(redis_service)
-#         # user_repo: UserRepoProtocol = UserRepo(session)
-
-#         # bg_bet_monitor: BackgroundTasksServiceProtocol = get_bg_tasks_service(
-#         #     bet_repo, event_service, user_repo
-#         # )
-#         bg = await run_bg_bet_monitor(redis_service)
-
-#         async def run_tasks(bg_bet_monitor: BackgroundTasksServiceProtocol) -> None:
-#             await asyncio.gather(
-#                 bg,
-#                 consumer_service.consume_forever(all_settings.rabbit.rabbit_rk),
-#             )
-
-#         tasks: asyncio.Task = asyncio.create_task(run_tasks())
-
-#         yield
-#         tasks.cancel()
-
-
-async def run_bg_bet_monitor(redis_service: RedisRepo) -> None:
-    """
-    Запускает фоновую задачу для мониторинга ставок.
-    Использует отдельную сессию для работы с базой данных.
-    """
-    async for session in get_session():
-        bet_repo: BetRepoProtocol = BetRepo(session)
-        event_service: GetEventsServiceProtocol = GetEventsService(redis_service)
-        user_repo: UserRepoProtocol = UserRepo(session)
-
-        bg_bet_monitor: BackgroundTasksServiceProtocol = get_bg_tasks_service(
-            bet_repo, event_service, user_repo
-        )
-        await bg_bet_monitor.monitor_periodically()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """
-    Контекстный менеджер для управления жизненным циклом приложения.
-    Запускает фоновые задачи и корректно завершает их при остановке приложения.
-    """
-    async with RabbitBaseConnection(all_settings.rabbit) as rbmq_service:
-        # Инициализация Redis
-        redis_connection: Redis = await get_redis_connection()
-        redis_service = RedisRepo(redis_connection)
+    async with container() as request_container:
+        # app.state.dishka_container = request_container
+        # app.state.jwt_service = await request_container.get(JWTServiceProtocol)
 
-        # Инициализация сервиса для работы с RabbitMQ
-        consumer_service = ConsumerService(rbmq_service, redis_service)
-
-        # Запуск фоновой задачи для мониторинга ставок
-        bg_task = asyncio.create_task(run_bg_bet_monitor(redis_service))
-
-        # Запуск задачи для обработки сообщений из RabbitMQ
-        rabbit_task = asyncio.create_task(
-            consumer_service.consume_forever(all_settings.rabbit.rabbit_rk)
+        consumer_service: ConsumerService = await request_container.get(ConsumerService)
+        bg_task_service: BackgroundTasksServiceProtocol = await request_container.get(
+            BackgroundTasksServiceProtocol
         )
 
-        # Передача управления обратно в приложение
-        yield
+        async def run_tasks() -> None:
+            await asyncio.gather(
+                consumer_service.consume_forever(),
+                bg_task_service.monitor_periodically(),
+            )
 
-        # Корректное завершение фоновых задач при остановке приложения
-        bg_task.cancel()
-        rabbit_task.cancel()
-        await asyncio.gather(bg_task, rabbit_task, return_exceptions=True)
+        tasks: asyncio.Task = asyncio.create_task(run_tasks())
+
+        yield
+        tasks.cancel()
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -162,7 +88,7 @@ def init_routers(app: FastAPI) -> None:
 
 
 def init_middlewares(app: FastAPI) -> None:
-    origins = all_settings.different.bet_origins
+    origins = all_configs.different.bet_origins
 
     app.add_middleware(
         CORSMiddleware,
@@ -172,7 +98,7 @@ def init_middlewares(app: FastAPI) -> None:
         allow_headers=["*"],
     )
     app.add_middleware(LoggerMiddleware)
-    app.add_middleware(CheckJWTAccessMiddleware, jwt_service=get_jwt_service())
+    app.add_middleware(CheckJWTAccessMiddleware)
 
 
 def setup_app() -> FastAPI:
@@ -182,7 +108,8 @@ def setup_app() -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
-    init_logger(all_settings.logging)
+    init_logger(all_configs.logging)
+    setup_dishka(app=app, container=container)
     init_routers(app)
     init_middlewares(app)
     register_exception_handlers(app)

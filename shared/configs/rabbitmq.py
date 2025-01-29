@@ -5,33 +5,33 @@ from aio_pika import connect_robust
 from aio_pika.abc import AbstractRobustConnection
 from aio_pika.exceptions import AMQPConnectionError
 
-from .settings import RabbitSettings
+from .settings import Settings
 
 
 class RabbitBaseConnection:
-    def __init__(self, rbmq_settings: "RabbitSettings") -> None:
-        self.rbmq_settings = rbmq_settings
+    def __init__(self, settings: Settings) -> None:
+        self._settings = settings
         self._connection: Optional[AbstractRobustConnection] = None
 
     async def connect(self) -> None:
-        """Establish a connection to RabbitMQ."""
+        """Establish a connection to RabbitMQ"""
         if not self._connection or self._connection.is_closed:
             try:
-                self._connection = await connect_robust(self.rbmq_settings.mq_uri)
+                self._connection = await connect_robust(self._settings.rabbit.mq_uri)
             except AMQPConnectionError as e:
                 raise ConnectionError("Failed to connect to RabbitMQ") from e
 
     @property
     def connection(self) -> AbstractRobustConnection:
-        """Get the connection, raise an error if not initialized."""
+        """Get the connection, raise an error if not initialized"""
         if not self._connection or self._connection.is_closed:
             raise RuntimeError(
-                "RabbitMQ connection is not initialized or already closed."
+                "RabbitMQ connection is not initialized or already closed"
             )
         return self._connection
 
     async def close(self) -> None:
-        """Close the connection."""
+        """Close the connection"""
         if self._connection and not self._connection.is_closed:
             await self._connection.close()
             self._connection = None
