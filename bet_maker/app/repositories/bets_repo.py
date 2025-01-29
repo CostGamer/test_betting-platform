@@ -1,8 +1,8 @@
 from pydantic import UUID4
-from sqlalchemy import and_, insert, select
+from sqlalchemy import and_, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bet_maker.app.core.models.pydantic_models import GetBet, PostBetDTO
+from bet_maker.app.core.models.pydantic_models import ActiveBets, GetBet, PostBetDTO
 from bet_maker.app.core.models.sqlalchemy_models import Bets, Users
 
 
@@ -19,6 +19,7 @@ class BetRepo:
                 money_amount=bet_data.money_amount,
                 result=bet_data.result,
                 user_id=bet_data.user_id,
+                event_id=bet_data.event_id,
             )
             .returning(Bets)
         )
@@ -38,3 +39,21 @@ class BetRepo:
 
         query_res = (await self._con.execute(query)).scalars().all()
         return [GetBet.model_validate(event) for event in query_res]
+
+    async def fetch_all_active_bets(self) -> list[ActiveBets]:
+        query = select(Bets).distinct().where(Bets.result == 1)
+        query_res = (await self._con.execute(query)).scalars().all()
+        return [ActiveBets.model_validate(bet) for bet in query_res]
+
+    async def change_bet_status(
+        self, result: int, name: str, event_id: UUID4
+    ) -> list[GetBet]:
+        query = (
+            update(Bets)
+            .where(and_(Bets.name == name, Bets.event_id == event_id))
+            .values(result=result)
+            .execution_options(synchronize_session="fetch")
+            .returning(Bets)
+        )
+        query_res = (await self._con.execute(query)).scalars().all()
+        return [GetBet.model_validate(bet) for bet in query_res]

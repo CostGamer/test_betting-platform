@@ -10,7 +10,10 @@ from fastapi.security import HTTPBearer
 from jwt.exceptions import InvalidTokenError
 from redis.asyncio import Redis
 
-from bet_maker.app.api.dependencies import get_jwt_service
+from bet_maker.app.api.dependencies import (
+    get_bg_tasks_service,
+    get_jwt_service,
+)
 from bet_maker.app.api.exception_responses.exceptions import (
     email_not_valid_error,
     event_not_found_error,
@@ -24,6 +27,7 @@ from bet_maker.app.api.exception_responses.exceptions import (
 from bet_maker.app.api.v1.controllers.auth_controller import auth_router
 from bet_maker.app.api.v1.controllers.bets_controller import bets_router
 from bet_maker.app.api.v1.controllers.events_controller import events_router
+from bet_maker.app.api.v1.controllers.user_controller import user_router
 from bet_maker.app.core.custom_exceptions import (
     EventNotFoundError,
     ExpectRefreshTokenError,
@@ -32,9 +36,18 @@ from bet_maker.app.core.custom_exceptions import (
     NotEnoughMoneyError,
     UserWithThisEmailExistsError,
 )
+from bet_maker.app.core.schemas.repo_protocols import BetRepoProtocol, UserRepoProtocol
+from bet_maker.app.core.schemas.service_protocols import (
+    BackgroundTasksServiceProtocol,
+    GetEventsServiceProtocol,
+)
+from bet_maker.app.repositories.bets_repo import BetRepo
 from bet_maker.app.repositories.redis_repo import RedisRepo
+from bet_maker.app.repositories.user_repo import UserRepo
 from bet_maker.app.services.consumer_service import ConsumerService
+from bet_maker.app.services.events_service import GetEventsService
 from shared.configs import all_settings
+from shared.configs.database import get_session
 from shared.configs.rabbitmq import RabbitBaseConnection
 from shared.configs.redis import get_redis_connection
 from shared.middleware.check_jwt_middleware import CheckJWTAccessMiddleware
@@ -51,15 +64,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         redis_service = RedisRepo(redis_connection)
         consumer_service = ConsumerService(rbmq_service, redis_service)
 
-        async def run_tasks() -> None:
-            await asyncio.gather(
-                consumer_service.consume_forever(all_settings.rabbit.rabbit_rk)
+        async for session in get_session():
+            bet_repo: BetRepoProtocol = BetRepo(session)
+            event_service: GetEventsServiceProtocol = GetEventsService(redis_service)
+            user_repo: UserRepoProtocol = UserRepo(session)
+
+            bg_bet_monitor: BackgroundTasksServiceProtocol = get_bg_tasks_service(
+                bet_repo, event_service, user_repo
             )
 
-        tasks: asyncio.Task = asyncio.create_task(run_tasks())
+            async def run_tasks(bg_bet_monitor: BackgroundTasksServiceProtocol) -> None:
+                await asyncio.gather(
+                    bg_bet_monitor.monitor_periodically(),
+                    consumer_service.consume_forever(all_settings.rabbit.rabbit_rk),
+                )
 
-        yield
-        tasks.cancel()
+            tasks: asyncio.Task = asyncio.create_task(run_tasks(bg_bet_monitor))
+
+            yield
+            tasks.cancel()
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -77,6 +100,7 @@ def init_routers(app: FastAPI) -> None:
     http_bearer = HTTPBearer(auto_error=True)
     app.include_router(auth_router, prefix="/v1")
     app.include_router(events_router, prefix="/v1")
+    app.include_router(user_router, prefix="/v1", dependencies=[Depends(http_bearer)])
     app.include_router(bets_router, prefix="/v1", dependencies=[Depends(http_bearer)])
 
 

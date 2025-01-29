@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID
 
 from fastapi import Request
 
@@ -55,6 +56,7 @@ class PostBetService:
             coefficient=event_data.coefficient,
             result=event_data.status,
             user_id=user_id,
+            event_id=UUID(event_data.event_id, version=4),
         )
         bet = await self._bet_repo.make_bet(bet_to_db)
         return bet

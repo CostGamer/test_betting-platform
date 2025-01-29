@@ -2,7 +2,7 @@ from typing import Protocol
 
 from pydantic import UUID4
 
-from bet_maker.app.core.models.pydantic_models import GetBet, PostBetDTO
+from bet_maker.app.core.models.pydantic_models import ActiveBets, GetBet, PostBetDTO
 
 
 class BetRepoProtocol(Protocol):
@@ -11,9 +11,18 @@ class BetRepoProtocol(Protocol):
         pass
 
     async def fetch_active_bet(self, user_id: UUID4) -> list[GetBet]:
-        """Retrieve active bets"""
+        """Retrieve active user bets"""
         pass
 
     async def fetch_all_user_bets(self, user_id: UUID4) -> list[GetBet]:
-        """Retrieve bets history"""
+        """Retrieve user bets history"""
+        pass
+
+    async def fetch_all_active_bets(self) -> list[ActiveBets]:
+        """Retrieve all active bets"""
+
+    async def change_bet_status(
+        self, result: int, name: str, event_id: UUID4
+    ) -> list[GetBet]:
+        """Change bet status (win/lose)"""
         pass

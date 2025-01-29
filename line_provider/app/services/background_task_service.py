@@ -61,7 +61,7 @@ class CreateEventService:
 
         await self._bg_task_repo.create_event(event)
 
-    async def create_events_periodically(self, interval: int = 30) -> None:
+    async def create_events_periodically(self, interval: int = 60) -> None:
         while True:
             try:
                 await self._create_random_event()

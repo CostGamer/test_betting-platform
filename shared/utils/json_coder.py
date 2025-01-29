@@ -11,6 +11,7 @@ async def change_transfer_data(event_data: dict[UUID4, Event]) -> list[dict[str,
             "name": event.name,
             "coefficient": float(event.coefficient),
             "status": event.status,
+            "event_id": str(event.event_id),
         }
         for event in event_data.values()
     ]

@@ -13,3 +13,7 @@ class GetEventsService:
 
     def _filter_events(self, events: list[dict]) -> list[Event | None]:
         return [Event(**event) for event in events if event.get("status") == 1]
+
+    async def get_all_events(self) -> list[Event | None]:
+        all_events = await self._redis_repo.get_message()
+        return [Event(**event) for event in all_events if event.get("status") != 1]
