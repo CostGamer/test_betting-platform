@@ -56,90 +56,33 @@ from shared.utils.logger import init_logger
 
 logger = getLogger(__name__)
 
-# async def run_bg_bet_monitor(redis_service):
-#     async for session in get_session():
-#         bet_repo: BetRepoProtocol = BetRepo(session)
-#         event_service: GetEventsServiceProtocol = GetEventsService(redis_service)
-#         user_repo: UserRepoProtocol = UserRepo(session)
-#         bg_bet_monitor: BackgroundTasksServiceProtocol = get_bg_tasks_service(
-#             bet_repo, event_service, user_repo
-#         )
-#         await bg_bet_monitor.monitor_periodically()
-
-# @asynccontextmanager
-# async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-#     async with RabbitBaseConnection(all_settings.rabbit) as rbmq_service:
-#         redis_connection: Redis = await get_redis_connection()
-#         redis_service = RedisRepo(redis_connection)
-#         consumer_service = ConsumerService(rbmq_service, redis_service)
-
-#         # async for session in get_session():
-#         # bet_repo: BetRepoProtocol = BetRepo(session)
-#         # event_service: GetEventsServiceProtocol = GetEventsService(redis_service)
-#         # user_repo: UserRepoProtocol = UserRepo(session)
-
-#         # bg_bet_monitor: BackgroundTasksServiceProtocol = get_bg_tasks_service(
-#         #     bet_repo, event_service, user_repo
-#         # )
-#         bg = await run_bg_bet_monitor(redis_service)
-
-#         async def run_tasks(bg_bet_monitor: BackgroundTasksServiceProtocol) -> None:
-#             await asyncio.gather(
-#                 bg,
-#                 consumer_service.consume_forever(all_settings.rabbit.rabbit_rk),
-#             )
-
-#         tasks: asyncio.Task = asyncio.create_task(run_tasks())
-
-#         yield
-#         tasks.cancel()
-
-
-async def run_bg_bet_monitor(redis_service: RedisRepo) -> None:
-    """
-    Запускает фоновую задачу для мониторинга ставок.
-    Использует отдельную сессию для работы с базой данных.
-    """
-    async for session in get_session():
-        bet_repo: BetRepoProtocol = BetRepo(session)
-        event_service: GetEventsServiceProtocol = GetEventsService(redis_service)
-        user_repo: UserRepoProtocol = UserRepo(session)
-
-        bg_bet_monitor: BackgroundTasksServiceProtocol = get_bg_tasks_service(
-            bet_repo, event_service, user_repo
-        )
-        await bg_bet_monitor.monitor_periodically()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """
-    Контекстный менеджер для управления жизненным циклом приложения.
-    Запускает фоновые задачи и корректно завершает их при остановке приложения.
-    """
     async with RabbitBaseConnection(all_settings.rabbit) as rbmq_service:
-        # Инициализация Redis
         redis_connection: Redis = await get_redis_connection()
         redis_service = RedisRepo(redis_connection)
-
-        # Инициализация сервиса для работы с RabbitMQ
         consumer_service = ConsumerService(rbmq_service, redis_service)
 
-        # Запуск фоновой задачи для мониторинга ставок
-        bg_task = asyncio.create_task(run_bg_bet_monitor(redis_service))
+        async for session in get_session():
+            bet_repo: BetRepoProtocol = BetRepo(session)
+            event_service: GetEventsServiceProtocol = GetEventsService(redis_service)
+            user_repo: UserRepoProtocol = UserRepo(session)
 
-        # Запуск задачи для обработки сообщений из RabbitMQ
-        rabbit_task = asyncio.create_task(
-            consumer_service.consume_forever(all_settings.rabbit.rabbit_rk)
-        )
+            bg_bet_monitor: BackgroundTasksServiceProtocol = get_bg_tasks_service(
+                bet_repo, event_service, user_repo
+            )
 
-        # Передача управления обратно в приложение
-        yield
+            async def run_tasks(bg_bet_monitor: BackgroundTasksServiceProtocol) -> None:
+                await asyncio.gather(
+                    bg_bet_monitor.monitor_periodically(),
+                    consumer_service.consume_forever(all_settings.rabbit.rabbit_rk),
+                )
 
-        # Корректное завершение фоновых задач при остановке приложения
-        bg_task.cancel()
-        rabbit_task.cancel()
-        await asyncio.gather(bg_task, rabbit_task, return_exceptions=True)
+            tasks: asyncio.Task = asyncio.create_task(run_tasks(bg_bet_monitor))
+
+            yield
+            tasks.cancel()
 
 
 def register_exception_handlers(app: FastAPI) -> None:

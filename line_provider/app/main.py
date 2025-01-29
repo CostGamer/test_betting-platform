@@ -29,7 +29,7 @@ from line_provider.app.core.schemas.services_protocols import (
 from line_provider.app.services.producer_service import ProducerService
 from line_provider.app.storage import events
 from shared.configs import all_settings
-from shared.configs.rabbitmq import RabbitBaseConnection  # RabbitBaseSingleton
+from shared.configs.rabbitmq import RabbitBaseConnection
 from shared.middleware.logging_middleware import LoggerMiddleware
 from shared.utils.logger import init_logger
 
