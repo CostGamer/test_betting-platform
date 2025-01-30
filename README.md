@@ -38,6 +38,7 @@
 - **Alembic** — Инструмент для управления миграциями базы данных.
 - **Uvicorn** — ASGI сервер для запуска приложения.
 - **Asyncio** — Модуль для асинхронного программирования.
+- **Dishka** - DI библиотека
 
 ## Структура проекта
 ```
@@ -134,26 +135,30 @@ test_betting-platform/
    docker-compose up -d
    ```
 
-4. **Примените миграции базы данных:**
-   ```bash
-   docker-compose exec line_provider alembic upgrade head
-   docker-compose exec bet_maker alembic upgrade head
-   ```
-
-5. **Сервисы будут доступны по следующим адресам:**
+4. **Сервисы будут доступны по следующим адресам:**
    - `line_provider`: http://localhost:8000
    - `bet_maker`: http://localhost:8001
 
 ## Тестирование
 
-Для запуска тестов выполните следующую команду:
+1. **Настройте параметры подключения в файле** `tests/__init__.py`
 
-```bash
-docker-compose exec line_provider pytest
-docker-compose exec bet_maker pytest
-```
+2. **Накатите миграции на тестовую БД**
+
+3. **Запустите тесты**:
+    ```bash
+    pytest -p no:warnings -v #без warning
+    ```
+    ```bash
+    pytest -v 
+    ```
 
 ## Документация
 
 - [Swagger Line_Provider](http://localhost:8000/docs)
-- [Swagger Bet_Maker](http://localhost:8000/docs)
+- [Swagger Bet_Maker](http://localhost:8001/docs)
+
+
+## Контакты
+
+Если у вас возникли вопросы или предложения, можете связаться с нами по почте: `vladimirbryzgalov00@gmail.com`.
