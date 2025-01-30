@@ -1,0 +1,80 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: backend_container_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: backend_container_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  redis:
+    image: redis:latest
+    container_name: backend_container_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  line_provider:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend_container_line_provider
+    working_dir: /app
+    command: >
+      sh -c "
+      uvicorn --factory line_provider.app.main:setup_app --host ${UVICORN_LINE_HOST} --port ${UVICORN_LINE_PORT}
+      "
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - rabbitmq
+      - redis
+    volumes:
+      - .:/app
+
+  bet_maker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend_container_bet_maker
+    working_dir: /app
+    command: >
+      sh -c "
+      alembic upgrade head &&
+      uvicorn --factory bet_maker.app.main:setup_app --host ${UVICORN_BET_HOST} --port ${UVICORN_BET_PORT}
+      "
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - rabbitmq
+      - redis
+    volumes:
+      - .:/app
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  redis_data:
